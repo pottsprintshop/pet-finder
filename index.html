@@ -60,6 +60,29 @@
     height: fit-content;
     backdrop-filter: blur(6px);
   }
+  .photo {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 12px;
+    margin-bottom: 1.25rem;
+    overflow: hidden;
+  }
+  .photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .photo.placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px dashed var(--card-border);
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    padding: 1rem;
+  }
   h1 {
     font-family: "LemonMilk", -apple-system, sans-serif;
     font-weight: 700;
@@ -89,29 +112,54 @@
 </style>
 </head>
 <body>
-<div id="app">Looking up tag info...</div>
+<div id="app">Reading tag...</div>
 
 <script>
-  // Replace this with your deployed Apps Script /exec URL
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxZxhanK9gLIZx7Ybg-V2zcm-0VjB7ROAujeEcoi4HkLXGNjQGcKXW-31XGblM0QRb-xw/exec";
-
   const app = document.getElementById("app");
   const params = new URLSearchParams(window.location.search);
-  const id = params.get("id");
+  const encoded = params.get("d");
 
   function showMessage(text) {
     app.textContent = text;
   }
 
+  function decodePayload(encoded) {
+    let b64 = encoded.replace(/-/g, "+").replace(/_/g, "/");
+    while (b64.length % 4) b64 += "=";
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return JSON.parse(new TextDecoder("utf-8").decode(bytes));
+  }
+
   function showResult(data) {
     app.innerHTML = "";
 
+    const photoBox = document.createElement("div");
+    photoBox.className = "photo";
+
+    function showPhotoPlaceholder() {
+      photoBox.className = "photo placeholder";
+      photoBox.textContent = data.pet + " hasn't uploaded a photo yet.";
+    }
+
+    if (data.photo) {
+      const img = document.createElement("img");
+      img.src = data.photo;
+      img.alt = data.pet;
+      img.onerror = showPhotoPlaceholder;
+      photoBox.appendChild(img);
+    } else {
+      showPhotoPlaceholder();
+    }
+    app.appendChild(photoBox);
+
     const heading = document.createElement("h1");
-    heading.textContent = "You found " + data.petName + "!";
+    heading.textContent = "You found " + data.pet + "!";
     app.appendChild(heading);
 
     const para = document.createElement("p");
-    para.textContent = "Please contact " + data.ownerName + ":";
+    para.textContent = "Please contact " + data.owner + ":";
     app.appendChild(para);
 
     const buttons = document.createElement("div");
@@ -119,39 +167,30 @@
 
     const callLink = document.createElement("a");
     callLink.className = "button call";
-    callLink.href = "tel:" + data.ownerPhone;
-    callLink.textContent = "Call " + data.ownerName;
+    callLink.href = "tel:" + data.phone;
+    callLink.textContent = "Call " + data.owner;
     buttons.appendChild(callLink);
 
-    const messageBody = "Hey " + data.ownerName + ", I found " + data.petName +
+    const messageBody = "Hey " + data.owner + ", I found " + data.pet +
       ". I would love to get you both reunited, please give me a call as soon as you can!";
 
     const textLink = document.createElement("a");
     textLink.className = "button text";
-    textLink.href = "sms:" + data.ownerPhone + "&body=" + encodeURIComponent(messageBody);
-    textLink.textContent = "Text " + data.ownerName;
+    textLink.href = "sms:" + data.phone + "&body=" + encodeURIComponent(messageBody);
+    textLink.textContent = "Text " + data.owner;
     buttons.appendChild(textLink);
 
     app.appendChild(buttons);
   }
 
-  if (!id) {
-    showMessage("No pet tag ID was provided.");
-  } else if (APPS_SCRIPT_URL.indexOf("PASTE_YOUR") === 0) {
-    showMessage("Setup incomplete: Apps Script URL not configured.");
+  if (!encoded) {
+    showMessage("No pet tag data was provided.");
   } else {
-    fetch(APPS_SCRIPT_URL + "?id=" + encodeURIComponent(id))
-      .then(function (r) { return r.json(); })
-      .then(function (data) {
-        if (data.error) {
-          showMessage("This tag isn't recognized.");
-        } else {
-          showResult(data);
-        }
-      })
-      .catch(function () {
-        showMessage("Couldn't load tag info. Check your connection and try again.");
-      });
+    try {
+      showResult(decodePayload(encoded));
+    } catch (e) {
+      showMessage("This tag isn't recognized.");
+    }
   }
 </script>
 </body>

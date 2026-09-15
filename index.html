@@ -75,13 +75,26 @@
   }
   .photo.placeholder {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 0.75rem;
     background: rgba(255, 255, 255, 0.06);
     border: 1px dashed var(--card-border);
-    color: var(--text-dim);
-    font-size: 0.85rem;
     padding: 1rem;
+  }
+  .placeholder-caption {
+    font-family: "LemonMilk", -apple-system, sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+  .photo .placeholder-logo {
+    width: 55%;
+    height: 55%;
+    object-fit: contain;
   }
   h1 {
     font-family: "LemonMilk", -apple-system, sans-serif;
@@ -140,7 +153,18 @@
 
     function showPhotoPlaceholder() {
       photoBox.className = "photo placeholder";
-      photoBox.textContent = data.pet + " hasn't uploaded a photo yet.";
+      photoBox.innerHTML = "";
+
+      const caption = document.createElement("div");
+      caption.className = "placeholder-caption";
+      caption.textContent = "BUTTERS HASN'T UPLOADED A PHOTO YET....";
+      photoBox.appendChild(caption);
+
+      const logo = document.createElement("img");
+      logo.className = "placeholder-logo";
+      logo.src = "assets/potts-print-shop-logo.png";
+      logo.alt = "Potts Print Shop";
+      photoBox.appendChild(logo);
     }
 
     if (data.photo) {

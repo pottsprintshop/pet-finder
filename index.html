@@ -77,9 +77,12 @@
     callLink.textContent = "Call " + data.ownerName;
     buttons.appendChild(callLink);
 
+    const messageBody = "Hey " + data.ownerName + ", I found " + data.petName +
+      ". I would love to get you both reunited, please give me a call as soon as you can!";
+
     const textLink = document.createElement("a");
     textLink.className = "button text";
-    textLink.href = "sms:" + data.ownerPhone;
+    textLink.href = "sms:" + data.ownerPhone + "&body=" + encodeURIComponent(messageBody);
     textLink.textContent = "Text " + data.ownerName;
     buttons.appendChild(textLink);
 
